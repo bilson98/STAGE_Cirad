@@ -1,0 +1,52 @@
+---
+title: "Correspondance avec variables AEGIS"
+author: "Billy NGABA"
+date: "04/07/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Remplacement de Yield_CAS, Sugar-CAS et IFTH dans les fichiers d'observation
+
+```{r}
+
+data = readxl::read_xls("P42_2020/P42_2020_observation.xls")
+
+
+data$OBS_VARIABLE = gsub("Yield_CAS","stem_crop_yield_fm_t.ha-1",data$OBS_VARIABLE)
+data$OBS_VARIABLE = gsub("Sugar_CAS","stem_sugar_fm_content_%",data$OBS_VARIABLE)
+data$OBS_VARIABLE = gsub("IFTH","Herbicide application frequence index",data$OBS_VARIABLE)
+
+
+library(openxlsx)
+write.xlsx(data, "essai_obs.xlsx")
+```
+
+## Remplacement des "recouvrement" dans les fichiers de notation
+
+```{r}
+
+data = readxl::read_xls("P42_2019/P42_2019_notes.xls")
+
+
+data$OBS_VARIABLE = gsub("Rec_globale_plein","plant_ground_cover_%",data$OBS_VARIABLE)
+data$OBS_VARIABLE = gsub("Rec_globale_R","plant_ground_cover_%",data$OBS_VARIABLE)
+data$OBS_VARIABLE = gsub("Rec_globale_IR","plant_ground_cover_%",data$OBS_VARIABLE)
+
+data$OBS_VARIABLE = gsub("Rec_adv_plein","plant_ground_cover_%",data$OBS_VARIABLE)
+data$OBS_VARIABLE = gsub("Rec_adv_R","plant_ground_cover_%",data$OBS_VARIABLE)
+data$OBS_VARIABLE = gsub("Rec_adv_IR","plant_ground_cover_%",data$OBS_VARIABLE)
+
+data$OBS_VARIABLE = gsub("Rec_pds_plein","plant_ground_cover_%",data$OBS_VARIABLE)
+data$OBS_VARIABLE = gsub("Rec_pds_R","plant_ground_cover_%",data$OBS_VARIABLE)
+data$OBS_VARIABLE = gsub("Rec_pds_IR","plant_ground_cover_%",data$OBS_VARIABLE)
+
+
+library(openxlsx)
+write.xlsx(data, "essai_notes.xlsx")
+```
+
+

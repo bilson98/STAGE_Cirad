@@ -1,0 +1,1425 @@
+---
+title: "Mise en forme des 'Design' des différents essais"
+author: "Billy NGABA"
+date: "15/03/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#### A.Crescence
+
+```{r}
+library(openxlsx)
+
+#flie <- 
+A.Crescence_design = read.xlsx("A.Crescence_design.xlsx", 1)  # Lire la prémière feuille
+
+data = A.Crescence_design
+
+sp_row = tail(data, n =125)
+
+
+sp_row$unit_code = gsub("21","3",sp_row$unit_code)
+sp_row$assigned_to = gsub("21","3",sp_row$assigned_to)
+
+data = rbind(data,sp_row )
+
+
+```
+
+```{r}
+library(openxlsx)
+A.Crescence_design = read.xlsx("A.Crescence_2015.xlsx", 1)  # Lire la prémière feuille
+
+data = A.Crescence_design
+data = data[data$num_level==1,]
+
+data = niveaux_1_3(data,data_TU)
+
+## Gestion des espèces d'adventices
+Liste_adv = data[106:126,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 125-94)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "A.Crescence_2015_designR.xlsx")
+```
+
+
+
+## Gestion des adventices
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_espece_adv = read.csv("Donnees_canne_PDS_plantes_de_service/Liste_espece_adv.csv", sep = ";")
+Liste_espece_adv = Liste_espece_adv$Species
+
+```
+
+## Fonction de construction des niveaux 1 à 3 (sans les noms des espèces d'adventices)
+
+```{r}
+niveaux_1_3 <- function(data) { #, data_TU
+  nbre_par = nrow(data) # nombre de parcelles
+  
+  ir = rep("IR", nbre_par)
+  r = rep("R", nbre_par)
+  cane = rep("Cane", nbre_par)
+  weed = rep("weed", nbre_par)
+  weeding = rep("weeding", nbre_par)
+  weed_sp = rep("weed_sp", nbre_par)
+  #cc = rep("cc", nbre_par)
+  
+  data_exp_n1 = tail(data, n = nbre_par) #niveau 1
+  
+  
+  # niveau 2
+  
+  data_exp_n2 = data_exp_n1
+  data_exp_n2$num_level = data_exp_n1$num_level + 1
+  data_exp_n2$assigned_to = data_exp_n1$unit_code
+  
+  ##inter-rang
+  data_exp_n2$unit_code = paste(data_exp_n1$unit_code, ir, sep = '_')
+  data_exp_n2$level_label = "inter_rank"
+  data = rbind(data, data_exp_n2)
+  
+  ##rang
+  data_exp_n2$unit_code = paste(data_exp_n1$unit_code, r, sep = '_')
+  data_exp_n2$level_label = "rank"
+  data = rbind(data, data_exp_n2)
+  
+  ##cane
+  data_exp_n2$unit_code = paste(data_exp_n1$unit_code, cane, sep = '_')
+  data_exp_n2$level_label = "subplot"
+  data = rbind(data, data_exp_n2)
+  
+  ##weed
+  data_exp_n2$unit_code = paste(data_exp_n1$unit_code, weed, sep = '_')
+  data_exp_n2$level_label = "subplot"
+  data = rbind(data, data_exp_n2)
+  
+  ##weed_sp
+  data_exp_n2$unit_code = paste(data_exp_n1$unit_code, weed_sp, sep = '_')
+  data_exp_n2$level_label = "subplot"
+  data = rbind(data, data_exp_n2)
+  
+  ##weeding
+  data_exp_n2$unit_code = paste(data_exp_n1$unit_code, weeding, sep = '_')
+  data_exp_n2$level_label = "subplot"
+  data = rbind(data, data_exp_n2)
+  
+  ##cc
+  # parc_pds = unique(data_TU[data_TU$factor=="PDS","unit_code"])
+  # cc1 = rep("cc", length(parc_pds))
+  # data_exp_n1_cc = data_exp_n1[data_exp_n1$unit_code %in% parc_pds,]
+  # data_exp_n2_cc = data_exp_n1_cc
+  # data_exp_n2_cc$num_level = data_exp_n1_cc$num_level + 1
+  # data_exp_n2_cc$assigned_to = data_exp_n1_cc$unit_code
+  # data_exp_n2_cc$unit_code = paste(data_exp_n1_cc$unit_code, cc1, sep = '_')
+  # data_exp_n2_cc$level_label = "subplot"
+  # data = rbind(data, data_exp_n2_cc)
+  
+  
+  #niveau 3
+  
+  data_exp_n2 = data[(nbre_par + 1):(2 * nbre_par), ] ## pour ir
+  
+  data_exp_n3 = data_exp_n2
+  data_exp_n3$num_level = data_exp_n2$num_level + 1
+  data_exp_n3$assigned_to = data_exp_n2$unit_code
+  
+  ##inter-rang
+  ### cc
+  # data_exp_n2_cc = data_exp_n2[data_exp_n2$assigned_to %in% parc_pds,]
+  # data_exp_n3_cc = data_exp_n2_cc
+  # data_exp_n3_cc$num_level = data_exp_n2_cc$num_level + 1
+  # data_exp_n3_cc$assigned_to = data_exp_n2_cc$unit_code
+  # data_exp_n3_cc$unit_code = paste(data_exp_n2_cc$unit_code, cc1, sep = '_') 
+  # data_exp_n3_cc$level_label = "plant"
+  # data = rbind(data, data_exp_n3_cc)
+  ###
+  data_exp_n3$unit_code = paste(data_exp_n2$unit_code, weed, sep = '_') #adv
+  data_exp_n3$level_label = "plant"
+  data = rbind(data, data_exp_n3)
+  data_exp_n3$unit_code = paste(data_exp_n2$unit_code, weeding, sep = '_') #weeding
+  data_exp_n3$level_label = "plant"
+  data = rbind(data, data_exp_n3)
+  
+  ##rang
+  data_exp_n2 = data[(2 * nbre_par + 1):(3 * nbre_par), ] ## pour r
+  data_exp_n3$assigned_to = data_exp_n2$unit_code
+  ### cc
+  # data_exp_n2_cc = data_exp_n2[data_exp_n2$assigned_to %in% parc_pds,]
+  # data_exp_n3_cc = data_exp_n2_cc
+  # data_exp_n3_cc$num_level = data_exp_n2_cc$num_level + 1
+  # data_exp_n3_cc$assigned_to = data_exp_n2_cc$unit_code
+  # data_exp_n3_cc$unit_code = paste(data_exp_n2_cc$unit_code, cc1, sep = '_') 
+  # data_exp_n3_cc$level_label = "plant"
+  # data = rbind(data, data_exp_n3_cc)
+  ###
+  data_exp_n3$unit_code = paste(data_exp_n2$unit_code, weed, sep = '_') #adv
+  data_exp_n3$level_label = "plant"
+  data = rbind(data, data_exp_n3)
+  data_exp_n3$unit_code = paste(data_exp_n2$unit_code, weeding, sep = '_') #weeding
+  data_exp_n3$level_label = "plant"
+  data = rbind(data, data_exp_n3)
+  
+  
+  return(data)
+}
+```
+
+
+## Fonction de construction des noms des espèces d'adventices (dans le niveau 3)
+
+```{r}
+noms_adv <- function(data_exp_sp,data,Liste_espece_adv,Liste_adv ) {
+  
+  data_exp_sp$unit_code = Liste_espece_adv
+  data_exp_sp$assigned_to = Liste_adv[1]
+  data_exp_sp$unit_code = paste(data_exp_sp$assigned_to, data_exp_sp$unit_code, sep = '_')
+  
+  data = rbind(data, data_exp_sp)
+  
+  for (i in 2:length(Liste_adv)) {
+    data_exp_sp = tail(data, n = 125)
+    data_exp_sp$unit_code = Liste_espece_adv
+    data_exp_sp$assigned_to = Liste_adv[i]
+    data_exp_sp$unit_code = paste(data_exp_sp$assigned_to, data_exp_sp$unit_code, sep = '_')
+    data = rbind(data, data_exp_sp)
+  }
+  
+  
+  return(data)
+}
+```
+
+
+
+
+
+## O.Fontaine
+
+### 2016
+
+```{r}
+library(openxlsx)
+O.Fontaine_2016_design = read.xlsx("O.Fontaine_2016.xlsx", 1)  # Lire la prémière feuille
+
+data = O.Fontaine_2016_design
+data = data[data$num_level==1,]
+
+data = niveaux_1_3(data,data_TU)
+
+## Gestion des espèces d'adventices
+Liste_adv = data[181:216,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "O.Fontaine_2016_designR.xlsx")
+
+```
+
+
+### 2017
+
+```{r}
+library(openxlsx)
+
+
+O.Fontaine_2017_design = read.xlsx("O.Fontaine_2017.xlsx", 1)  # Lire la prémière feuille
+
+data = O.Fontaine_2017_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("O.Fontaine_2017.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+
+```
+
+```{r}
+
+## Gestion des espèces d'adventices
+Liste_adv = data[61:72,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 58)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-116)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "O.Fontaine_2017_designR.xlsx")
+
+```
+
+### 2018
+
+```{r}
+library(openxlsx)
+
+
+O.Fontaine_2018_design = read.xlsx("O.Fontaine_2018.xlsx", 1)  # Lire la prémière feuille
+
+data = O.Fontaine_2018_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("O.Fontaine_2018.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+
+```
+
+```{r}
+
+## Gestion des espèces d'adventices
+Liste_adv = data[46:54,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 44)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-88)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "O.Fontaine_2018_designR.xlsx")
+
+```
+
+
+### 2019
+
+```{r}
+library(openxlsx)
+
+
+O.Fontaine_2019_design = read.xlsx("O.Fontaine_2019.xlsx", 1)  # Lire la prémière feuille
+
+data = O.Fontaine_2019_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("O.Fontaine_2019.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+
+```{r}
+
+## Gestion des espèces d'adventices
+Liste_adv = data[46:54,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 44)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-88)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "O.Fontaine_2019_designR.xlsx")
+
+```
+
+### 2020
+
+```{r}
+library(openxlsx)
+
+
+O.Fontaine_2020_design = read.xlsx("O.Fontaine_2020.xlsx", 1)  # Lire la prémière feuille
+
+data = O.Fontaine_2020_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("O.Fontaine_2020.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+
+```{r}
+
+## Gestion des espèces d'adventices
+Liste_adv = data[41:48,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 40)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-80)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "O.Fontaine_2020_designR.xlsx")
+
+```
+
+
+## Baleya
+
+
+```{r}
+library(openxlsx)
+
+
+Baleya_2014_design = read.xlsx("Baleya_2014.xlsx", 1)  # Lire la prémière feuille
+
+data = Baleya_2014_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("Baleya_2014.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+
+```{r}
+
+## Gestion des espèces d'adventices
+Liste_adv = data[181:216,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "Baleya_2014_designR.xlsx")
+
+```
+
+
+## P12
+
+### 2018
+
+```{r}
+library(openxlsx)
+
+
+P12_2018_design = read.xlsx("P12_2018.xlsx", 1)  # Lire la prémière feuille
+
+data = P12_2018_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P12_2018.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+
+```{r}
+
+## Gestion des espèces d'adventices
+Liste_adv = data[46:54,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 38)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-76)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P12_2018_designR.xlsx")
+
+```
+
+### 2019
+
+```{r}
+library(openxlsx)
+
+
+P12_2019_design = read.xlsx("P12_2019.xlsx", 1)  # Lire la prémière feuille
+
+data = P12_2019_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P12_2019.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+
+```{r}
+
+## Gestion des espèces d'adventices
+Liste_adv = data[46:54,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 38)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-76)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P12_2019_designR.xlsx")
+
+```
+
+
+
+
+### 2020
+
+```{r}
+library(openxlsx)
+
+
+P12_2020_design = read.xlsx("P12_2020.xlsx", 1)  # Lire la prémière feuille
+
+data = P12_2020_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P12_2020.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+
+```{r}
+
+## Gestion des espèces d'adventices
+Liste_adv = data[36:42,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 30)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 30)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-90)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P12_2020_designR.xlsx")
+
+```
+
+
+## P25_ITK
+
+### 2013
+
+```{r}
+library(openxlsx)
+
+
+P25_ITK_2013_design = read.xlsx("P25_ITK_2013.xlsx", 1)  # Lire la prémière feuille
+
+data = P25_ITK_2013_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P25_ITK_2013.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[201:240,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P25_ITK_2013_designR.xlsx")
+
+```
+
+
+### 2014
+
+```{r}
+library(openxlsx)
+
+
+P25_ITK_2014_design = read.xlsx("P25_ITK_2014.xlsx", 1)  # Lire la prémière feuille
+
+data = P25_ITK_2014_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P25_ITK_2014.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[201:240,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P25_ITK_2014_designR.xlsx")
+
+```
+
+### 2015
+
+```{r}
+library(openxlsx)
+
+
+P25_ITK_2015_design = read.xlsx("P25_ITK_2015.xlsx", 1)  # Lire la prémière feuille
+
+data = P25_ITK_2015_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P25_ITK_2015.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[181:216,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P25_ITK_2015_designR.xlsx")
+
+```
+
+
+
+## P25_LEG
+
+### 2012
+
+```{r}
+library(openxlsx)
+
+
+P25_LEG_2012_design = read.xlsx("P25_LEG_2012.xlsx", 1)  # Lire la prémière feuille
+
+data = P25_LEG_2012_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P25_LEG_2012.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[206:246,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P25_LEG_2012_designR.xlsx")
+
+```
+
+
+### 2013
+
+```{r}
+library(openxlsx)
+
+
+P25_LEG_2013_design = read.xlsx("P25_LEG_2013.xlsx", 1)  # Lire la prémière feuille
+
+data = P25_LEG_2013_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P25_LEG_2013.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[201:240,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P25_LEG_2013_designR.xlsx")
+
+```
+
+
+### 2014
+
+```{r}
+library(openxlsx)
+
+
+P25_LEG_2014_design = read.xlsx("P25_LEG_2014.xlsx", 1)  # Lire la prémière feuille
+
+data = P25_LEG_2014_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P25_LEG_2014.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[201:240,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P25_LEG_2014_designR.xlsx")
+
+```
+
+
+### 2015
+
+```{r}
+library(openxlsx)
+
+
+P25_LEG_2015_design = read.xlsx("P25_LEG_2015.xlsx", 1)  # Lire la prémière feuille
+
+data = P25_LEG_2015_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P25_LEG_2015.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[201:240,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P25_LEG_2015_designR.xlsx")
+
+```
+
+
+### 2016
+
+```{r}
+library(openxlsx)
+
+
+P25_LEG_2016_design = read.xlsx("P25_LEG_2016.xlsx", 1)  # Lire la prémière feuille
+
+data = P25_LEG_2016_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P25_LEG_2016.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[261:312,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P25_LEG_2016_designR.xlsx")
+
+```
+
+
+## P25_montagne
+
+### 2018
+
+```{r}
+library(openxlsx)
+
+
+P25_montagne_2018_design = read.xlsx("P25_montagne_2018/P25_montagne_2018.xlsx", 1)  # Lire la prémière feuille
+
+data = P25_montagne_2018_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P25_montagne_2018/P25_montagne_2018.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[51:60,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 48)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-96)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P25_montagne_2018_designR.xlsx")
+
+```
+
+### 2019
+
+```{r}
+library(openxlsx)
+
+
+P25_montagne_2019_design = read.xlsx("P25_montagne_2019.xlsx", 1)  # Lire la prémière feuille
+
+data = P25_montagne_2019_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P25_montagne_2019.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[51:60,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 48)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-96)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P25_montagne_2019_designR.xlsx")
+
+```
+
+
+### 2020
+
+```{r}
+library(openxlsx)
+
+
+P25_montagne_2020_design = read.xlsx("P25_montagne_2020.xlsx", 1)  # Lire la prémière feuille
+
+data = P25_montagne_2020_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P25_montagne_2020.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[51:60,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 48)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-96)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P25_montagne_2020_designR.xlsx")
+
+```
+
+
+## P41
+
+### 2015
+
+```{r}
+library(openxlsx)
+
+
+P41_2015_design = read.xlsx("P41_2015.xlsx", 1)  # Lire la prémière feuille
+
+data = P41_2015_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P41_2015.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[161:192,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P41_2015_designR.xlsx")
+
+```
+
+### 2016
+
+```{r}
+library(openxlsx)
+
+
+P41_2016_design = read.xlsx("P41_2016.xlsx", 1)  # Lire la prémière feuille
+
+data = P41_2016_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P41_2016.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[161:192,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P41_2016_designR.xlsx")
+
+```
+
+
+### 2017
+
+```{r}
+library(openxlsx)
+
+
+P41_2017_design = read.xlsx("P41_2017.xlsx", 1)  # Lire la prémière feuille
+
+data = P41_2017_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P41_2017.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[201:240,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P41_2017_designR.xlsx")
+
+```
+
+### 2018
+
+```{r}
+library(openxlsx)
+
+
+P41_2018_design = read.xlsx("P41_2018.xlsx", 1)  # Lire la prémière feuille
+
+data = P41_2018_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P41_2018.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[161:192,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P41_2018_designR.xlsx")
+
+```
+
+### 2019
+
+```{r}
+library(openxlsx)
+
+
+P41_2019_design = read.xlsx("P41_2019.xlsx", 1)  # Lire la prémière feuille
+
+data = P41_2019_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P41_2019.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[161:192,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P41_2019_designR.xlsx")
+
+```
+
+
+### 2020
+
+```{r}
+library(openxlsx)
+
+
+P41_2020_design = read.xlsx("P41_2020.xlsx", 1)  # Lire la prémière feuille
+
+data = P41_2020_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P41_2020.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[161:192,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P41_2020_designR.xlsx")
+
+```
+
+
+### 2021
+
+```{r}
+library(openxlsx)
+
+
+P41_2021_design = read.xlsx("P41_2021.xlsx", 1)  # Lire la prémière feuille
+
+data = P41_2021_design
+data = data[data$num_level==1,]
+
+data_TU = read.xlsx("P41_2021.xlsx", 7)
+
+data = niveaux_1_3(data,data_TU)
+```
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[161:192,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = tail(data, n =125)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P41_2021_designR.xlsx")
+
+```
+
+
+## P42
+
+### 2016
+
+```{r}
+library(openxlsx)
+
+
+P42_2016_design = read.xlsx("P42_2016/P42_2016.xlsx", 1)  # Lire la prémière feuille
+
+data = P42_2016_design
+#data = data[data$num_level==1,]
+
+#data_TU = read.xlsx("P42_2016.xlsx", 7)
+
+data = niveaux_1_3(data)#,data_TU)
+```
+
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[121:144,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 125-96)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P42_2016/P42_2016_designR.xlsx")
+
+```
+
+
+### 2017
+
+```{r}
+library(openxlsx)
+
+
+P42_2017_design = read.xlsx("P42_2017/P42_2017.xlsx", 1)  # Lire la prémière feuille
+
+data = P42_2017_design
+#data = data[data$num_level==1,]
+
+#data_TU = read.xlsx("P42_2016.xlsx", 7)
+
+data = niveaux_1_3(data)#,data_TU)
+```
+
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[121:144,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 125-96)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P42_2017/P42_2017_designR.xlsx")
+
+```
+
+
+### 2018
+
+```{r}
+library(openxlsx)
+
+
+P42_2018_design = read.xlsx("P42_2018/P42_2018.xlsx", 1)  # Lire la prémière feuille
+
+data = P42_2018_design
+#data = data[data$num_level==1,]
+
+#data_TU = read.xlsx("P42_2016.xlsx", 7)
+
+data = niveaux_1_3(data)#,data_TU)
+```
+
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[121:144,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 125-96)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P42_2018/P42_2018_designR.xlsx")
+
+```
+
+
+### 2019
+
+```{r}
+library(openxlsx)
+
+
+P42_2019_design = read.xlsx("P42_2019/P42_2019.xlsx", 1)  # Lire la prémière feuille
+
+data = P42_2019_design
+#data = data[data$num_level==1,]
+
+#data_TU = read.xlsx("P42_2016.xlsx", 7)
+
+data = niveaux_1_3(data)#,data_TU)
+```
+
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[41:48,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 32)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-64)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P42_2019/P42_2019_designR.xlsx")
+
+```
+
+
+### 2020
+
+```{r}
+library(openxlsx)
+
+
+P42_2020_design = read.xlsx("P42_2020/P42_2020.xlsx", 1)  # Lire la prémière feuille
+
+data = P42_2020_design
+#data = data[data$num_level==1,]
+
+#data_TU = read.xlsx("P42_2016.xlsx", 7)
+
+data = niveaux_1_3(data)#,data_TU)
+```
+
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[41:48,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 32)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-64)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "P42_2020/P42_2020_designR.xlsx")
+
+```
+
+
+
+## Canne Bio
+
+```{r}
+library(openxlsx)
+
+
+Canne_Bio_design = read.xlsx("Canne_Bio_2021/Canne_Bio_2021.xlsx", 1)  # Lire la prémière feuille
+
+data = Canne_Bio_design
+#data = data[data$num_level==1,]
+
+#data_TU = read.xlsx("P42_2016.xlsx", 7)
+
+data = niveaux_1_3(data)#,data_TU)
+```
+
+
+```{r}
+## Gestion des espèces d'adventices
+Liste_adv = data[61:72,]$unit_code
+
+######### 
+# Je construis un dataframe ayant 125 qui correspond au nbre d'espèces d'adventices
+data_exp_sp = data[data$num_level==3,]
+data_exp_sp1 = tail(data_exp_sp, n = 48)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+data_exp_sp1 = tail(data_exp_sp, n = 125-96)
+data_exp_sp = rbind(data_exp_sp,data_exp_sp1)
+##########
+
+data = noms_adv(data_exp_sp,data,Liste_espece_adv,Liste_adv )
+
+# test = full_join(data,data_exp_sp)
+
+write.xlsx(data, "Canne_Bio_2021/Canne_Bio_2021_designR.xlsx")
+
+```

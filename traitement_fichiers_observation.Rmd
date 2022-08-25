@@ -1,0 +1,58 @@
+---
+title: "Mise en forme des fichiers d'observation"
+author: "Billy NGABA"
+date: "22/03/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(openxlsx)
+
+# ressource = read.csv("Donnees_canne_PDS_plantes_de_service/MAT_FACTEUR3.csv", sep = ";")
+ressource = read.xlsx("Donnees_canne_PDS_plantes_de_service/FINAL_MAT_FACTEUR_2.xlsx")
+
+```
+
+
+```{r}
+
+essai = subset(ressource, essai == "Canne Bio" & YEAR == 2021)
+
+obs = data.frame(essai$parcelle,essai$Date_coupe_fin,essai$Yield_CAS,essai$Sugar_CAS,essai$IFTH)
+
+colnames(obs) = c("UNIT_CODE","OBS_DATE","Yield_CAS","Sugar_CAS","IFTH")
+
+
+library(tidyr)
+
+obs = obs %>%pivot_longer(
+  cols = c("Yield_CAS","Sugar_CAS","IFTH"),
+  names_to = "OBS_VARIABLE",
+  values_to = "VALEUR_QUANTITATIVE"
+)
+
+# obs[(obs$OBS_VARIABLE == "Yield_CAS") | (obs$OBS_VARIABLE == "Sugar_CAS"),"UNIT_CODE" ] = paste(obs[(obs$OBS_VARIABLE == "Yield_CAS") | (obs$OBS_VARIABLE == "Sugar_CAS"),"UNIT_CODE"], "Cane", sep = '_')
+
+cellules = obs[(obs$OBS_VARIABLE == "Yield_CAS") | (obs$OBS_VARIABLE == "Sugar_CAS"),"UNIT_CODE" ]
+
+for(i in 1:nrow(cellules)){
+  obs[(obs$OBS_VARIABLE == "Yield_CAS") | (obs$OBS_VARIABLE == "Sugar_CAS"),"UNIT_CODE"][i,] = paste(cellules[i,], "Cane", sep = '_') 
+}
+
+library(openxlsx)
+write.xlsx(obs, "essai_obs.xlsx")
+
+# library(tidyverse)
+# test = obs %>%
+#   filter(OBS_VARIABLE == "Yield_CAS" | OBS_VARIABLE == "Sugar_CAS") %>%
+#   select(UNIT_CODE)
+# 
+# dim(test)
+# test[1,]
+```
+

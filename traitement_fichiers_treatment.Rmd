@@ -1,0 +1,159 @@
+---
+title: "Mise en forme des 'Treatment_Level' et 'Treatment_Unit' des différents essais"
+author: "Billy NGABA"
+date: "17/03/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(openxlsx)
+
+ressource = read.csv("Donnees_canne_PDS_plantes_de_service/MAT_FACTEUR3.csv", sep = ";")
+
+
+ressource$Niveaufacteur_1 = gsub("TP bis","TPextra",ressource$Niveaufacteur_1)
+facteurs = unique(ressource$Facteur)
+n_fact1 = unique(ressource$Niveaufacteur_1)
+n_fact2 = unique(ressource$Niveau.facteur.2)
+n_fact3 = unique(ressource$Niveau.facteur.3)
+```
+
+```{r}
+TP1 = cbind(c("TP"),c("TP","TPextra","Tbordure"))
+TP21 = cbind(c("TP"),c("TP","TPextra"))
+TP22 = cbind(c("TP"),c("TP","Tbordure"))
+TP3 = cbind(c("TP"),c("TP"))
+    
+TE = cbind(c("TE"),c("TE"))  
+
+ZE1 = cbind(c("ZE"),c("ZEP","ZESP"))
+ZE21 = cbind(c("ZE"),c("ZEP"))
+ZE22 = cbind(c("ZE"),c("ZESP"))
+
+Des_c1 = cbind(c("Désherbage"),c("Chimique en plein","Enherbement contrôlé"))
+Des_c21 = cbind(c("Désherbage"),c("Chimique en plein"))
+Des_c22 = cbind(c("Désherbage"),c("Enherbement contrôlé"))
+
+Des_meca = n_fact1[7:15]
+Des_meca = Des_meca[-8]
+
+```
+
+
+## TL
+
+```{r}
+essai = subset(ressource, essai == "P41" & YEAR == 2021)
+facteurs_es = unique(essai$Facteur)
+n_fact1_es = unique(essai$Niveaufacteur_1)
+n_fact2_es = unique(essai$Niveau.facteur.2)
+n_fact3_es = unique(essai$Niveau.facteur.3)
+par_es = unique(essai$parcelle)
+
+# Tableau = data.frame(2,2)
+# Tableau = Tableau[-1,]
+# colnames(Tableau) = c("factor","factor_level")
+
+Tableau = matrix(ncol=2)
+```
+
+
+```{r}
+
+if("TP" %in% facteurs_es){
+  if(("TPextra" %in% n_fact1_es) & "Tbordure" %in% n_fact1_es ){
+    Tableau = rbind(Tableau,TP1)
+  }
+  else if(("TPextra" %in% n_fact1_es)  ){
+    Tableau = rbind(Tableau,TP21)
+  }
+  else if("Tbordure" %in% n_fact1_es){
+    Tableau = rbind(Tableau,TP22)
+  }
+  else{
+    Tableau = rbind(Tableau,TP3)
+  }
+  Tableau = rbind(Tableau,Des_c21)
+  
+}
+
+if("TE" %in% facteurs_es){
+  Tableau = rbind(Tableau,TE)
+  Tableau = rbind(Tableau,Des_c22)
+}
+
+if("ZE" %in% facteurs_es){
+  if("ZEP" %in% n_fact1_es & "ZESP" %in% n_fact1_es){
+    Tableau = rbind(Tableau,ZE1)
+  }
+  else if("ZEP" %in% n_fact1_es){
+    Tableau = rbind(Tableau,ZE21)
+  }
+  else{
+    Tableau = rbind(Tableau,ZE22)
+  }
+}
+
+if("PDS" %in% facteurs_es){
+  PDS = cbind("PDS", na.omit(n_fact2_es))
+  Tableau = rbind(Tableau,PDS)
+}
+
+
+if("Désherbage" %in% facteurs_es){
+  Des_meca_es = intersect(n_fact1_es,Des_meca)
+  Des = cbind("Désherbage", Des_meca_es)
+  Tableau = rbind(Tableau,Des)
+}
+
+Tableau = data.frame(na.omit(Tableau))
+colnames(Tableau) = c("factor","factor_level")
+library(openxlsx)
+write.xlsx(Tableau, "essai_TL.xlsx")
+
+```
+
+## TU
+
+```{r}
+mat = matrix(ncol = 3, nrow = 100)
+Tableau_es = data.frame(mat)
+#Tableau_es = Tableau_es[-1,]
+colnames(Tableau_es) = c("unit_code","factor","factor_level")
+
+j = 1
+for(i in 1:length(par_es)){
+  Tableau_es$unit_code[j] = par_es[i]
+  Tableau_es$factor[j] = essai[essai$parcelle==par_es[i],"Facteur"]
+  
+  f = Tableau_es$factor[j]
+  
+  if(f == "TP" | f == "TE" ){
+    Tableau_es$factor_level[j] = essai[essai$parcelle==par_es[i],"Niveaufacteur_1"]
+    k = j+1
+    Tableau_es$unit_code[k] = par_es[i]
+    Tableau_es$factor[k] = "Désherbage"
+    Tableau_es$factor_level[k] = essai[essai$parcelle==par_es[i],"Niveau.facteur.3"]
+    j = k
+  }
+  
+  else if(f == "PDS"){
+    Tableau_es$factor_level[j] = essai[essai$parcelle==par_es[i],"Niveau.facteur.2"]
+  }
+  
+  else {
+    Tableau_es$factor_level[j] = essai[essai$parcelle==par_es[i],"Niveaufacteur_1"]
+  }
+  
+  j = j+1
+
+}
+
+library(openxlsx)
+write.xlsx(Tableau_es, "essai_TU.xlsx")
+```
+

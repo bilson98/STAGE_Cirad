@@ -1,0 +1,139 @@
+---
+title: "Mise en forme des fichiers de notes"
+author: "Billy NGABA"
+date: "25/03/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(openxlsx)
+library(readxl)
+
+# ressource1 = read.csv("Donnees_canne_PDS_plantes_de_service/REC_DATA_ALL.csv", sep = ";")
+ressource1 = read.xlsx("Donnees_canne_PDS_plantes_de_service/FINAL_REC_GLOBAL.xlsx")
+ressource1$date.plantation_ou_coupe = convertToDate(ressource1$date.plantation_ou_coupe)
+ressource1$date.notation = convertToDate(ressource1$date.notation)
+
+# ressource2 = read.csv("Donnees_canne_PDS_plantes_de_service/MAT_FACTEUR3.csv", sep = ";")
+ressource2 = read.xlsx("Donnees_canne_PDS_plantes_de_service/FINAL_MAT_FACTEUR_2.xlsx")
+ressource = merge(ressource1, ressource2)
+
+ressource$Note_globale_plein = as.integer(ressource$Note_globale_plein)
+ressource$Note_globale_R = as.integer(ressource$Note_globale_R)
+ressource$Note_globale_IR = as.integer(ressource$Note_globale_IR)
+ressource$Note_adv_plein = as.integer(ressource$Note_globale_plein)
+ressource$Note_adv_R = as.integer(ressource$Note_globale_R)
+ressource$Note_adv_IR = as.integer(ressource$Note_globale_IR)
+ressource$Note_pds_plein = as.integer(ressource$Note_globale_plein)
+ressource$Note_pds_R = as.integer(ressource$Note_globale_R)
+ressource$Note_pds_IR = as.integer(ressource$Note_globale_IR)
+
+```
+
+
+```{r}
+
+essai = subset(ressource, essai == "Canne Bio" & YEAR == 2021)
+
+
+
+# essai$Note_pds_plein[essai$Facteur != "PDS"] = -1199
+# essai$Note_pds_R[essai$Facteur != "PDS"] = -1199
+# essai$Note_pds_IR[essai$Facteur != "PDS"] = -1199
+
+notes = data.frame(essai$parcelle,essai$date.notation,essai$Note_globale_plein,essai$Note_globale_R,essai$Note_globale_IR,essai$Note_adv_plein,essai$Note_adv_R,essai$Note_adv_IR)#,essai$Note_pds_plein,essai$Note_pds_R,essai$Note_pds_IR)
+
+colnames(notes) = c("UNIT_CODE","OBS_DATE","Note_globale_plein","Note_globale_R","Note_globale_IR","Note_adv_plein","Note_adv_R","Note_adv_IR")#,"Note_pds_plein","Note_pds_R","Note_pds_IR")
+
+library(tidyr) #,"Note_pds_plein","Note_pds_R","Note_pds_IR"
+
+notes = notes %>%pivot_longer(
+  cols = c("Note_globale_plein","Note_globale_R","Note_globale_IR","Note_adv_plein","Note_adv_R","Note_adv_IR"),
+  names_to = "OBS_VARIABLE",
+  values_to = "VALEUR_QUANTITATIVE"
+)
+
+
+#### globale
+cellules = notes[(notes$OBS_VARIABLE == "Note_globale_plein"),"UNIT_CODE" ]
+
+for(i in 1:nrow(cellules)){
+  notes[(notes$OBS_VARIABLE == "Note_globale_plein"),"UNIT_CODE"][i,] = paste(cellules[i,], "weeding", sep = '_') 
+}
+
+cellules = notes[(notes$OBS_VARIABLE == "Note_globale_R"),"UNIT_CODE" ]
+
+for(i in 1:nrow(cellules)){
+  notes[(notes$OBS_VARIABLE == "Note_globale_R"),"UNIT_CODE"][i,] = paste(cellules[i,], "R_weeding", sep = '_') 
+}
+
+cellules = notes[(notes$OBS_VARIABLE == "Note_globale_IR"),"UNIT_CODE" ]
+
+for(i in 1:nrow(cellules)){
+  notes[(notes$OBS_VARIABLE == "Note_globale_IR"),"UNIT_CODE"][i,] = paste(cellules[i,], "IR_weeding", sep = '_') 
+}
+
+
+
+#### adv
+cellules = notes[(notes$OBS_VARIABLE == "Note_adv_plein"),"UNIT_CODE" ]
+
+for(i in 1:nrow(cellules)){
+  notes[(notes$OBS_VARIABLE == "Note_adv_plein"),"UNIT_CODE"][i,] = paste(cellules[i,], "weed", sep = '_') 
+}
+
+cellules = notes[(notes$OBS_VARIABLE == "Note_adv_R"),"UNIT_CODE" ]
+
+for(i in 1:nrow(cellules)){
+  notes[(notes$OBS_VARIABLE == "Note_adv_R"),"UNIT_CODE"][i,] = paste(cellules[i,], "R_weed", sep = '_') 
+}
+
+cellules = notes[(notes$OBS_VARIABLE == "Note_adv_IR"),"UNIT_CODE" ]
+
+for(i in 1:nrow(cellules)){
+  notes[(notes$OBS_VARIABLE == "Note_adv_IR"),"UNIT_CODE"][i,] = paste(cellules[i,], "IR_weed", sep = '_') 
+}
+
+
+
+#### pds
+# cellules = notes[(notes$OBS_VARIABLE == "Note_pds_plein"),"UNIT_CODE" ]
+# 
+# for(i in 1:nrow(cellules)){
+#   notes[(notes$OBS_VARIABLE == "Note_pds_plein"),"UNIT_CODE"][i,] = paste(cellules[i,], "cc", sep = '_') 
+# }
+# 
+# cellules = notes[(notes$OBS_VARIABLE == "Note_pds_R"),"UNIT_CODE" ]
+# 
+# for(i in 1:nrow(cellules)){
+#   notes[(notes$OBS_VARIABLE == "Note_pds_R"),"UNIT_CODE"][i,] = paste(cellules[i,], "R_cc", sep = '_') 
+# }
+# 
+# cellules = notes[(notes$OBS_VARIABLE == "Note_pds_IR"),"UNIT_CODE" ]
+# 
+# for(i in 1:nrow(cellules)){
+#   notes[(notes$OBS_VARIABLE == "Note_pds_IR"),"UNIT_CODE"][i,] = paste(cellules[i,], "IR_cc", sep = '_') 
+# }
+
+
+
+# notes = subset(notes, VALEUR_QUANTITATIVE != -1199 | is.na(VALEUR_QUANTITATIVE) )
+
+
+
+library(openxlsx)
+write.xlsx(notes, "essai_notes.xlsx")
+
+# library(tidyverse)
+# test = obs %>%
+#   filter(OBS_VARIABLE == "Yield_CAS" | OBS_VARIABLE == "Sugar_CAS") %>%
+#   select(UNIT_CODE)
+# 
+# dim(test)
+# test[1,]
+```
